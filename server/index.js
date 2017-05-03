@@ -3,12 +3,16 @@ import express from 'express'
 import React from 'react'
 import { createStore } from 'redux'
 import { Provider } from 'react-redux'
-import { renderToString } from 'react-dom/server'
+import { renderToStaticMarkup } from 'react-dom/server'
 import counterApp from './../common/reducers'
-import App from './../common/containers/App'
+import Search from './../common/components/Search'
+import algoliasearch from 'algoliasearch'
 
 const app = express()
 const port = 3000
+
+var client = algoliasearch('latency', '3d9875e51fbd20c7754e65422f7ce5e1');
+var index = client.initIndex('bestbuy');
 
 app.use('/public', express.static('public'))
 
@@ -25,19 +29,23 @@ function handleRender(req, res) {
     preloadedState
   )
 
-  // Render the component to a string
-  const html = renderToString(
-    <Provider store={store}>
-      <App />
-    </Provider>
-  )
+  index.search('').then((state) => {
+    console.log('in search', state);
+    // Render the component to a string
+    const html = renderToStaticMarkup(
+      <Provider store={store}>
+        <Search resultsState={state} />
+      </Provider>
+    )
 
-  // Grab the initial state from our Redux store
-  const finalState = store.getState()
-  console.log('state:', finalState);
+    // Grab the initial state from our Redux store
+    const finalState = store.getState()
+    console.log('state:', finalState);
 
-  // Send the rendered page back to the client
-  res.send(renderFullPage(html, finalState))
+    // Send the rendered page back to the client
+    res.send(renderFullPage(html, finalState))
+  })
+
 }
 
 function renderFullPage(html, preloadedState) {
@@ -52,7 +60,6 @@ function renderFullPage(html, preloadedState) {
         <script>
           // WARNING: See the following for Security isues with this approach:
           // http://redux.js.org/docs/recipes/ServerRendering.html#security-considerations
-          window.__PRELOADED_STATE__ = ${JSON.stringify(preloadedState)}
         </script>
         <script src="/public/vendor.bundle.js"></script>
         <script src="/public/bundle.js"></script>

@@ -1,7 +1,6 @@
 import { SET_COUNTER, INCREMENT_COUNTER, DECREMENT_COUNTER } from './../actions'
 
 const counter = (state = 0, action) => {
-  console.log('there11', INCREMENT_COUNTER);
   switch (action.type) {
     case SET_COUNTER:
       return action.payload
